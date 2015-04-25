@@ -26,13 +26,15 @@ remember that various probabilities need to be computed, because B -> 13 (so not
 #### clean
 Given the 'correct' JSON object with characters that are what they should be, output the text in the correct format, to be used by the front end application.
 
+Clean should store the output into a database.  There will be a unique id corresponding to image, and a unique id for each field / value which can be corrected by the user.  The raw string (from read\_textlines) should be included so that the user can help train the named entity recognition library.
+
 ```
 INPUT: { ... { price: "$415" } }
-OUTPUT: { ... { price: 4.15 } }
+OUTPUT: { ... { price: { value: 4.15, id: 'vo1c65' } }
 ```
 
 #### user\_submit\_error
-Users will be able to specify that they spotted an error.  Once they correct the error (which will be necessary for them to correctly use the application), this correction will be sent as a json object to the server.  This error will be added to an error queue.  The error queue will be run at some interval (ie, once a day) to train the pertinent algorithm (ner, fix_chars).
+Users will be able to specify that they spotted an error.  Once they correct the error (which will be necessary for them to correctly use the application), this correction will be sent as a json object to the server.  This error will be added to an error queue.  The error queue will be run at some interval (ie, once a day) to train the pertinent algorithm (ner, fix\_chars, etc.).
 
 ```
 error for count
@@ -56,4 +58,36 @@ error for price
 etc
 ```
 
-#### train\_errors
+#### train
+given a database of errors / receipt data, train all the various algorithms.
+
+### TECHNOLOGY
+DB: mongo to store all data.  Once all the kinks have been ironed out, will switch to postgresql
+OCR: tesseract
+CV: OpenCV, C++ native library for speed
+Machine Learning: (Library) ?? TBD ?? Needed for NES, Logistic Regression, possible other applications
+App: Whatever is the fastest / most convenient.  Possibly Java.  Would need JSON serialization libraries, probably wouldnt want it to be too hard to work with, REST libaries, HTTP server, etc.
+
+Everything will be performed via a REST API.
+```
+POST /receipt/
+```
+will return
+```
+{
+  id: "09ssdfgjk30jda9012jsadfjashd9",
+  total: 23.15
+  raw: "Burger good\n241 Hemingway \n Free delivery!\n chicken finger 1 S402\n2315 TOTAL"
+  items: [ 
+    {
+      id: "ac1lgf",
+      text: "chicken finger",
+      price: 4.02,
+      count: 1,
+      raw: "chicken finger 1 S402"
+    }
+  ]
+}
+```
+
+The raw strings are included so that training the algorithms can be done in a straightforward manner.  For example, a user won't be able to change the text.  They will only be able to select the correct text.
